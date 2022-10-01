@@ -1,0 +1,66 @@
+from os import path, remove
+import shutil
+import json
+
+
+class Config():
+    CLIENT_ID : str = ""
+    CLIENT_SECRET : str = ""
+    CLIENT_USER_NAME : str = ""
+    def __init__(self):
+
+        if not self.copy_example_config():
+            self.write_config_values_from_user_input()
+
+        self.check_config_values()
+        self.get_config_values()
+
+    def check_config_values(self):
+        with open("./config.json", "r") as f:
+            cfg = json.loads(f.read())
+            f.close()
+            vals = (cfg.get("SPOTIFY_CLIENT_ID"), cfg.get("SPOTIFY_CLIENT_SECRET"), cfg.get("SPOTIFY_USER_NAME"))
+            if None in vals or "CHANGEME" in vals:
+                print("Some config values where invalid, regenerating config")
+
+                remove("./config.json")
+                self.copy_example_config()
+
+                self.write_config_values_from_user_input()
+
+                self.check_config_values()
+
+    def get_config_values(self):
+        """Reads the required credentials from the config file"""
+        with open("./config.json", "r") as f:
+            cfg = json.loads(f.read())
+            f.close()
+            self.CLIENT_ID = cfg.get("SPOTIFY_CLIENT_ID")
+            self.CLIENT_SECRET = cfg.get("SPOTIFY_CLIENT_SECRET")
+            self.CLIENT_USER_NAME = cfg.get("SPOTIFY_USER_NAME")
+
+    def write_config_values_from_user_input(self):
+        cfg = {"SPOTIFY_CLIENT_ID": None, "SPOTIFY_CLIENT_SECRET": None, "SPOTIFY_USER_NAME": None}
+        cfg["SPOTIFY_CLIENT_ID"] = input("Please enter your spotify application client id which can be found under 'https://developer.spotify.com/dashboard/applications'/<application>:\n")
+        cfg["SPOTIFY_CLIENT_SECRET"] = input("Please enter your spotify application client secret which can be found under 'https://developer.spotify.com/dashboard/applications'/<application>:\n")
+        cfg["SPOTIFY_USER_NAME"] = input("Please enter your spotify username which can be found under 'www.spotify.com/us/account/overview/' -> 'username':\n")
+
+        try:
+            with open("./config.json", "w") as f:
+                f.write(json.dumps(cfg))
+                f.close()
+
+            s = "Successfully set config variables"
+            print("-"*len(s))
+            print(s)
+            print("-"*len(s))
+        except BaseException as e:
+            print(e)
+
+    def copy_example_config(self):
+        """Copies the default config"""
+        if path.exists("./config.json"):
+            return True
+        else:
+            shutil.copy("./config.example.json", "./config.json")
+            return False
