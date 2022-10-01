@@ -107,7 +107,7 @@ def do_spotify_stuff(token):
 
                 user_playlist_songs = list(user_playlist_songs.keys())
 
-                open(f"data/{user_playlist_name}.json", "w").write(json.dumps(user_playlist))
+                # open(f"data/{user_playlist_name}.json", "w").write(json.dumps(user_playlist))
 
                 if "extends:" not in user_playlist_desc:
                     # this playlist has a description
@@ -226,7 +226,7 @@ def do_spotify_stuff(token):
                         "user_added_songs": user_added_songs
                     }))
 
-                    open(f"data/{inherited_playlist_id}.json", "w").write(json.dumps(inherited_playlist))
+                    # open(f"data/{inherited_playlist_id}.json", "w").write(json.dumps(inherited_playlist))
 
             if user_playlists['next']:
                 user_playlists = sp.next(user_playlists)
