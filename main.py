@@ -13,10 +13,9 @@ import json
 
 cfg = Config()
 
-PORT_NUMBER = 8080
 SPOTIPY_CLIENT_ID = cfg.CLIENT_ID
 SPOTIPY_CLIENT_SECRET = cfg.CLIENT_SECRET
-SPOTIPY_REDIRECT_URI = 'http://localhost:8080'
+SPOTIPY_REDIRECT_URI = f'http://{cfg.IP}:{cfg.PORT}'
 SCOPE = 'playlist-modify-public playlist-modify-private'
 CACHE = '.spotipyoauthcache'
 
@@ -279,7 +278,7 @@ else:
         def stop(self):
             self.server.shutdown()
 
-    server = MyWSGIRefServer(port=80)
+    server = MyWSGIRefServer(host=cfg.IP, port=cfg.PORT)
 
     app = Bottle()
 
@@ -315,7 +314,6 @@ else:
         auth_url = sp_oauth.get_authorize_url()
         return auth_url
 
-    server = MyWSGIRefServer(port=PORT_NUMBER)
     try:
         app.run(server=server)
     except:

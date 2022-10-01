@@ -19,7 +19,7 @@ class Config():
         with open("./config.json", "r") as f:
             cfg = json.loads(f.read())
             f.close()
-            vals = (cfg.get("SPOTIFY_CLIENT_ID"), cfg.get("SPOTIFY_CLIENT_SECRET"), cfg.get("SPOTIFY_USER_NAME"))
+            vals = (cfg.get("SPOTIFY_CLIENT_ID"), cfg.get("SPOTIFY_CLIENT_SECRET"), cfg.get("SPOTIFY_USER_NAME"), cfg.get("IP"), cfg.get("PORT"))
             if None in vals or "CHANGEME" in vals:
                 print("Some config values where invalid, regenerating config")
 
@@ -38,12 +38,17 @@ class Config():
             self.CLIENT_ID = cfg.get("SPOTIFY_CLIENT_ID")
             self.CLIENT_SECRET = cfg.get("SPOTIFY_CLIENT_SECRET")
             self.CLIENT_USER_NAME = cfg.get("SPOTIFY_USER_NAME")
+            self.IP = cfg.get("IP", "127.0.0.1")
+            self.PORT = cfg.get("PORT", 8080)
 
     def write_config_values_from_user_input(self):
         cfg = {"SPOTIFY_CLIENT_ID": None, "SPOTIFY_CLIENT_SECRET": None, "SPOTIFY_USER_NAME": None}
         cfg["SPOTIFY_CLIENT_ID"] = input("Please enter your spotify application client id which can be found under 'https://developer.spotify.com/dashboard/applications'/<application>:\n")
         cfg["SPOTIFY_CLIENT_SECRET"] = input("Please enter your spotify application client secret which can be found under 'https://developer.spotify.com/dashboard/applications'/<application>:\n")
         cfg["SPOTIFY_USER_NAME"] = input("Please enter your spotify username which can be found under 'www.spotify.com/us/account/overview/' -> 'username':\n")
+        cfg["IP"] = input("Please enter the ip of your server or localhost if you're running it locally:\n")
+        print("---!!! Make sure that the same ip is also listed in your 'Redirect URIs' in the application panel !!!---")
+        cfg["PORT"] = int(input("Please enter the port that the auth server should run on (for example 8080):\n"))
 
         try:
             with open("./config.json", "w") as f:
