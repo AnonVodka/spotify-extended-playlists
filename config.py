@@ -19,7 +19,7 @@ class Config():
         with open("./config.json", "r") as f:
             cfg = json.loads(f.read())
             f.close()
-            vals = (cfg.get("SPOTIFY_CLIENT_ID"), cfg.get("SPOTIFY_CLIENT_SECRET"), cfg.get("SPOTIFY_USER_NAME"), cfg.get("IP"), cfg.get("PORT"))
+            vals = (cfg.get("SPOTIFY_CLIENT_ID"), cfg.get("SPOTIFY_CLIENT_SECRET"), cfg.get("SPOTIFY_USER_NAME"), cfg.get("IP"), cfg.get("PORT"), cfg.get("DELAY"))
             if None in vals or "CHANGEME" in vals:
                 print("Some config values where invalid, regenerating config")
 
@@ -40,6 +40,7 @@ class Config():
             self.CLIENT_USER_NAME = cfg.get("SPOTIFY_USER_NAME")
             self.IP = cfg.get("IP", "127.0.0.1")
             self.PORT = cfg.get("PORT", 8080)
+            self.DELAY = cfg.get("DELAY", 15)
 
     def write_config_values_from_user_input(self):
         cfg = {"SPOTIFY_CLIENT_ID": None, "SPOTIFY_CLIENT_SECRET": None, "SPOTIFY_USER_NAME": None}
@@ -49,6 +50,7 @@ class Config():
         cfg["IP"] = input("Please enter the ip of your server or localhost if you're running it locally:\n")
         print("---!!! Make sure that the same ip is also listed in your 'Redirect URIs' in the application panel !!!---")
         cfg["PORT"] = int(input("Please enter the port that the auth server should run on (for example 8080):\n"))
+        cfg["DELAY"] = int(input("Please enter the desired refresh delay in minutes:\n"))
 
         try:
             with open("./config.json", "w") as f:
