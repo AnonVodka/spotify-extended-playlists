@@ -1,10 +1,9 @@
-import threading
 import re
 import os
 import spotipy
 
 from spotipy.oauth2 import SpotifyOAuth
-from bottle import Bottle, ServerAdapter, request
+from bottle import Bottle, request
 from time import sleep
 
 from config import Config
@@ -12,13 +11,6 @@ from config import Config
 import json
 
 cfg = Config()
-
-SPOTIPY_CLIENT_ID = cfg.CLIENT_ID
-SPOTIPY_CLIENT_SECRET = cfg.CLIENT_SECRET
-SPOTIPY_REDIRECT_URI = f'http://{cfg.IP}:{cfg.PORT}'
-SCOPE = 'playlist-modify-public playlist-modify-private'
-CACHE = '.spotipyoauthcache'
-
 
 def get_diff_between_lists(a, b, c = None):
     not_in_a = []
@@ -87,11 +79,7 @@ def get_all_playlist_songs(sp: spotipy.Spotify, playlist):
 
     return songs
 
-def do_spotify_stuff(token, stop_server=False):
-
-    if stop_server:
-        print("Stopping http server")
-        server.stop()
+def do_spotify_stuff(token):
 
     print("Using token to create spotify object")
     sp = spotipy.Spotify(token)
@@ -247,38 +235,7 @@ def do_spotify_stuff(token, stop_server=False):
 
         sleep(5)
 
-
-
-sp_oauth = SpotifyOAuth( 
-    SPOTIPY_CLIENT_ID, 
-    SPOTIPY_CLIENT_SECRET,
-    SPOTIPY_REDIRECT_URI,
-    scope=SCOPE,
-    cache_path=CACHE 
-)
-
-token_info = sp_oauth.get_cached_token()
-
-if token_info:
-    do_spotify_stuff(token_info["access_token"])
-
-else:
-    class MyWSGIRefServer(ServerAdapter):
-        server = None
-
-        def run(self, handler):
-            from wsgiref.simple_server import make_server, WSGIRequestHandler
-            if self.quiet:
-                class QuietHandler(WSGIRequestHandler):
-                    def log_request(*args, **kw): pass
-                self.options['handler_class'] = QuietHandler
-            self.server = make_server(self.host, self.port, handler, **self.options)
-            self.server.serve_forever()
-
-        def stop(self):
-            self.server.shutdown()
-
-    server = MyWSGIRefServer(host=cfg.IP, port=cfg.PORT)
+def get_oauth_token(sp_oauth): 
 
     app = Bottle()
 
@@ -298,10 +255,8 @@ else:
                 access_token = sp_oauth.get_access_token(code, False)
 
         if access_token:
-            print("Access token available!")
-            spotify_thread = threading.Thread(target=do_spotify_stuff, args=(access_token, True))
-            print("Staring spotify thread")
-            spotify_thread.start()
+            print("Access token available! Please restart the application")
+            os._exit(1)
         else:
             return htmlForLoginButton()
 
@@ -314,8 +269,32 @@ else:
         auth_url = sp_oauth.get_authorize_url()
         return auth_url
 
-    try:
-        app.run(server=server)
-    except:
-        print('Bye')
+    app.run(host=cfg.IP, port=cfg.PORT)
+
+
+def main():
+
+    SPOTIPY_CLIENT_ID = cfg.CLIENT_ID
+    SPOTIPY_CLIENT_SECRET = cfg.CLIENT_SECRET
+    SPOTIPY_REDIRECT_URI = f'http://{cfg.IP}:{cfg.PORT}'
+    SCOPE = 'playlist-modify-public playlist-modify-private'
+    CACHE = '.spotipyoauthcache'
+
+    sp_oauth = SpotifyOAuth( 
+        SPOTIPY_CLIENT_ID, 
+        SPOTIPY_CLIENT_SECRET,
+        SPOTIPY_REDIRECT_URI,
+        scope=SCOPE,
+        cache_path=CACHE 
+    )
+
+    token_info = sp_oauth.get_cached_token()
+
+    if token_info:
+        do_spotify_stuff(token_info["access_token"])
+    else:
+        get_oauth_token(sp_oauth)
+
+if __name__ == "__main__":
+    main()
 
