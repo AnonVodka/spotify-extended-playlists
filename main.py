@@ -81,7 +81,7 @@ def get_all_playlist_songs(sp: spotipy.Spotify, playlist):
 
 def do_spotify_stuff(token):
 
-    print("Using token to create spotify object")
+    print("[#] Using token to create spotify object")
     sp = spotipy.Spotify(token)
 
     if not os.path.exists("extended-playlists"):

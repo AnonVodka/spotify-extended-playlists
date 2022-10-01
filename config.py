@@ -4,9 +4,6 @@ import json
 
 
 class Config():
-    CLIENT_ID : str = ""
-    CLIENT_SECRET : str = ""
-    CLIENT_USER_NAME : str = ""
     def __init__(self):
 
         if not self.copy_example_config():
