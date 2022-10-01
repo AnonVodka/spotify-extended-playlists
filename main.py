@@ -233,6 +233,7 @@ def do_spotify_stuff(token):
             else:
                 user_playlists = None
 
+        print(f"[#] Fetching again in {cfg.DELAY} minutes ({cfg.DELAY * 60} seconds)")
         sleep(cfg.DELAY * 60)
 
 def get_oauth_token(sp_oauth): 
