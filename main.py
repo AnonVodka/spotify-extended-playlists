@@ -13,6 +13,17 @@ import json
 
 cfg = Config()
 
+def remove_duplicates_from_list(a, return_duplicates=False):
+    b = []
+    d = []
+    for el in a:
+        if el not in b:
+            b.append(el)
+        else:
+            d.append(el)
+
+    return (b, d) if return_duplicates else b
+
 def get_diff_between_lists(a, b, c = None):
     not_in_a = []
     not_in_b = []
@@ -128,6 +139,8 @@ def do_spotify_stuff(token):
                 if len(urls) > 0:
                     # we found spotify playlist urls in the discription
 
+                    print(f"[#] Playlist \"{user_playlist_name}(id: {user_playlist_id})\" extends {len(urls)} playlists")
+
                     if os.path.exists(f"extended-playlists/{user_playlist_id}.json") and len(user_playlist_songs) == 0:
                         print("[#] Playlist is empty, removing data file")
                         os.remove(f"extended-playlists/{user_playlist_id}.json")
@@ -147,7 +160,14 @@ def do_spotify_stuff(token):
 
                         songs_cache.update(inherited_songs)
 
-                        songs_to_add += list(inherited_songs.keys())
+                        songs_to_add += inherited_songs.keys()
+
+                    songs_to_add, dups = remove_duplicates_from_list(songs_to_add, True)  
+
+                    dup_len = len(dups)
+                    if dup_len:
+                        songs_to_add_len = len(songs_to_add)
+                        print(f"[#] Removed {dup_len} duplicates from the song list, {songs_to_add_len} out of {songs_to_add_len + dup_len} songs left to add")
 
                     if os.path.exists(f"extended-playlists/{user_playlist_id}.json"):
                         # this playlist was already extended once
