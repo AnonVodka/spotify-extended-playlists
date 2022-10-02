@@ -36,6 +36,9 @@ def get_diff_between_lists(a, b, c = None):
     return (not_in_a, not_in_b)
 
 def remove_songs_from_playlist(sp: spotipy.Spotify, id, songs):
+    if len(songs) == 0: 
+        return
+
     if len(songs) > 100:
         for i in range(0, len(songs), 100):
             sp.playlist_remove_all_occurrences_of_items(id, songs[i:100+i])
@@ -43,6 +46,9 @@ def remove_songs_from_playlist(sp: spotipy.Spotify, id, songs):
         sp.playlist_remove_all_occurrences_of_items(id, songs)
 
 def add_songs_to_playlist(sp: spotipy.Spotify, id, songs):
+    if len(songs) == 0: 
+        return
+
     if len(songs) > 100:
         for i in range(0, len(songs), 100):
             sp.playlist_add_items(id, songs[i:100+i])
@@ -185,7 +191,9 @@ def do_spotify_stuff(token):
                                 # songs got removed from the inherited playlist
                                 # remove excessive songs from user playlist
                                 print("[-] The following songs need to be removed: " + ', '.join([songs_cache.get(x, "UNKNOWN") for x in not_in_a]))   
+
                                 script_added_songs = [x for x in script_added_songs if x not in not_in_a]
+
                                 remove_songs_from_playlist(sp, user_playlist_id, not_in_a)
 
                             if len(not_in_b) > 0:
@@ -195,12 +203,14 @@ def do_spotify_stuff(token):
                                 # so that we dont add songs that are already in the playlist coz the user added them lol
                                 not_in_b = get_diff_between_lists(user_playlist_songs, not_in_b)[0]
 
-                                print("[+] The following songs need to be added: " + ', '.join([songs_cache.get(x, "UNKNOWN") for x in not_in_b]))  
+                                if len(not_in_b) == 0:
+                                    print("[#] No songs to be added after removing already existing songs")
 
-                                add_songs_to_playlist(sp, user_playlist_id, not_in_b)
-                                script_added_songs += not_in_b
-                        
+                                else:
+                                    print("[+] The following songs need to be added: " + ', '.join([songs_cache.get(x, "UNKNOWN") for x in not_in_b]))  
 
+                                    add_songs_to_playlist(sp, user_playlist_id, not_in_b)
+                                    script_added_songs += not_in_b                                
                     else:
                         user_added_songs = user_playlist_songs
                         script_added_songs = get_diff_between_lists(user_added_songs, songs_to_add)[0]
