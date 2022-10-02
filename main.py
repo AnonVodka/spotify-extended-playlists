@@ -201,16 +201,16 @@ def do_spotify_stuff(token):
                                 # add missing songs to the playlist
                                 # get the difference between the existing songs and the songs we need to add
                                 # so that we dont add songs that are already in the playlist coz the user added them lol
-                                not_in_b = get_diff_between_lists(user_playlist_songs, not_in_b)[0]
+                                new_not_in_b = get_diff_between_lists(user_playlist_songs, not_in_b)[0]
 
-                                if len(not_in_b) == 0:
+                                if len(new_not_in_b) == 0:
                                     print("[#] No songs to be added after removing already existing songs")
-
+                                    script_added_songs += not_in_b
                                 else:
-                                    print("[+] The following songs need to be added: " + ', '.join([songs_cache.get(x, "UNKNOWN") for x in not_in_b]))  
+                                    print("[+] The following songs need to be added: " + ', '.join([songs_cache.get(x, "UNKNOWN") for x in new_not_in_b]))  
 
-                                    add_songs_to_playlist(sp, user_playlist_id, not_in_b)
-                                    script_added_songs += not_in_b                                
+                                    add_songs_to_playlist(sp, user_playlist_id, new_not_in_b)
+                                script_added_songs += new_not_in_b                                
                     else:
                         user_added_songs = user_playlist_songs
                         script_added_songs = get_diff_between_lists(user_added_songs, songs_to_add)[0]
