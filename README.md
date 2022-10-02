@@ -19,7 +19,8 @@
 - If its your first time launching the script, it'll start a web server and ask you to visit a specifc website, its required so that the script can get a unique token to login to your account
 - Once your on the website, simply hit the "login to spotify" button, wait for a redirect and close the website
 - If you see "Access token available! Please restart the application" in the console, you've done everything right and can now start the script again
-- You're basically done here, just let the script run and check every once in a while if it errored
+- You're basically done here, all you got to do now is add "extends: " followed by the playlist urls to your playlist description and the script will handle everything
+- You can add multiple playlists urls by seperating them with a space, both the url (open.spotify.com/playlist/id) and the internal spotify uri (spotify:playlist:id) are supported
   
 #
 
