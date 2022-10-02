@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import re
 import os
 import spotipy
@@ -54,28 +55,26 @@ def get_song_name(track):
 def get_all_playlist_songs(sp: spotipy.Spotify, playlist):
     songs = {}
 
-    total_songs = playlist["tracks"]["total"]
+    tracks = playlist["tracks"]
+    total_songs = tracks["total"]
     id = playlist["id"]
+
+    def _add_tracks(_tracks):
+        for x in _tracks["items"]:
+            track = x["track"]
+            songs.update({
+                track["id"]: get_song_name(track)
+            })
 
     if total_songs == 0:
         return songs
 
     if total_songs > 100:
         for i in range(0, total_songs, 100):
-            tmp = sp.playlist_items(id, limit=100, offset=i)
-
-            for x in tmp:
-                track = x["track"]
-                songs.update({
-                    track["id"]: get_song_name(track)
-                })
+            tracks = sp.playlist_items(id, limit=100, offset=i)
+            _add_tracks(tracks)
     else:
-        tmp = playlist["tracks"]["items"]
-        for x in tmp:
-            track = x["track"]
-            songs.update({
-                track["id"]: get_song_name(track)
-            })
+        _add_tracks(tracks)
 
     return songs
 
@@ -117,29 +116,23 @@ def do_spotify_stuff(token):
 
                 user_playlist_desc = user_playlist_desc[user_playlist_desc.index("extends:"):]
 
-                # get spotify playlist id from url
-                urls = re.findall("(https?://[^\s]+)", user_playlist_desc)
+                # get spotify playlist id from uri
+                urls = re.findall("(playlist[/:][0-9A-Za-z_-]{22})", user_playlist_desc)
 
                 if len(urls) > 0:
-                    # we found some urls in the description
-                    # make sure they are valid spotify urls
+                    # we found spotify playlist urls in the discription
 
                     if os.path.exists(f"extended-playlists/{user_playlist_id}.json") and len(user_playlist_songs) == 0:
-                        print("[!] Playlist is empty, removing data file")
+                        print("[#] Playlist is empty, removing data file")
                         os.remove(f"extended-playlists/{user_playlist_id}.json")
 
                     songs_to_add = []
 
                     for url in urls:
-                        if "open.spotify.com/playlist" not in url:
-                            print(f"[!] Skipping {url} because its not a valid spotify playlist url")
-                            continue
-
-                        inherited_playlist_id = url.split("/")[-1].split("?")[0]
-
-                        # basic checks to validate the authentizity of an id
-                        if not re.match("[0-9A-Za-z_-]{22}", inherited_playlist_id):
-                            print(f"[!] Skipping {inherited_playlist_id} as its not a valid id")
+                        # extract id from playlist uri (spotify:playlist:<id> / open.spotify.com/playlist/<id>)
+                        inherited_playlist_id = re.split("[:/]", url)[1]
+                        if inherited_playlist_id == None:
+                            print("[!] Couldn't extract playlist id from \"{url}\"!")
                             continue
 
                         inherited_playlist = sp.playlist(inherited_playlist_id)
@@ -156,7 +149,7 @@ def do_spotify_stuff(token):
                         # and do some comparison to see if the inherited playlist changed
                         # or if the user added/removed songs
 
-                        print(f"[#] Playlist {user_playlist_id}-{user_playlist_name} was already extended before, comparing data to file")
+                        print(f"[#] Playlist \"{user_playlist_name}(id: {user_playlist_id})\" was already extended before, comparing data to file")
 
                         info = json.loads(open(f"extended-playlists/{user_playlist_id}.json").read())
 
@@ -202,8 +195,6 @@ def do_spotify_stuff(token):
                                 # so that we dont add songs that are already in the playlist coz the user added them lol
                                 not_in_b = get_diff_between_lists(user_playlist_songs, not_in_b)[0]
 
-                                print(user_playlist_songs)
-
                                 print("[+] The following songs need to be added: " + ', '.join([songs_cache.get(x, "UNKNOWN") for x in not_in_b]))  
 
                                 add_songs_to_playlist(sp, user_playlist_id, not_in_b)
@@ -243,23 +234,17 @@ def get_oauth_token(sp_oauth):
     @app.route('/')
     def index():
             
-        access_token = ""
-        token_info = sp_oauth.get_cached_token()
-        if token_info:
-            print("Found cached token!")
-            access_token = token_info['access_token']
-        else:
-            url = request.url
-            code = sp_oauth.parse_response_code(url)
-            if code != url:
-                print("Found Spotify auth code in Request URL! Trying to get valid access token...")
-                access_token = sp_oauth.get_access_token(code, False)
+        url = request.url
+        code = sp_oauth.parse_response_code(url)
 
-        if access_token:
-            print("Access token available! Please restart the application")
-            os._exit(1)
-        else:
-            return htmlForLoginButton()
+        if code != url:
+            print("[#] Found Spotify auth code in Request URL! Trying to get valid access token...")
+            access_token = sp_oauth.get_access_token(code, False)
+            if access_token:
+                print("[#] Access token available! Please restart the application")
+                os._exit(1)
+                
+        return htmlForLoginButton()
 
     def htmlForLoginButton():
         auth_url = getSPOauthURI()
@@ -271,7 +256,6 @@ def get_oauth_token(sp_oauth):
         return auth_url
 
     app.run(host=cfg.IP, port=cfg.PORT)
-
 
 def main():
 
