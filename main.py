@@ -100,12 +100,19 @@ def do_spotify_stuff(token):
     print("[#] Using token to create spotify object")
     sp = spotipy.Spotify(token)
 
+    CLIENT_USER_NAME = sp.me()["id"]
+
+    if sp and CLIENT_USER_NAME:
+        print(f"[#] Successfully used token to log in to {CLIENT_USER_NAME}")
+    else:
+        raise Exception("[!] Something went wrong when trying to log in to your account, please delete the .auth-cache file and restart the application")
+
     if not os.path.exists("extended-playlists"):
         os.makedirs("extended-playlists")
 
     while True:
         print("[#] Fetching user playlists")
-        user_playlists = sp.user_playlists(cfg.CLIENT_USER_NAME)
+        user_playlists = sp.user_playlists(CLIENT_USER_NAME)
         while user_playlists:
             for user_playlist in user_playlists['items']:
 
@@ -293,7 +300,7 @@ def main():
     SPOTIPY_CLIENT_SECRET = cfg.CLIENT_SECRET
     SPOTIPY_REDIRECT_URI = f'http://{cfg.IP}:{cfg.PORT}'
     SCOPE = 'playlist-modify-public playlist-modify-private'
-    CACHE = '.spotipyoauthcache'
+    CACHE = '.auth-cache'
 
     sp_oauth = SpotifyOAuth( 
         SPOTIPY_CLIENT_ID, 
