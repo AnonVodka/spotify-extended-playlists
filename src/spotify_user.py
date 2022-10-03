@@ -18,6 +18,9 @@ class SpotifyUser(spotipy.Spotify):
     def get_token(self) -> str:
         return self.oauth.get_token()
 
+    def get_playlist(self, playlist_id: str) -> SpotifyPlaylist:
+        return SpotifyPlaylist(playlist_id, self)
+
     def get_all_playlists(self) -> dict[str, SpotifyPlaylist]:
         self.playlists = {}
         _playlists = self.user_playlists(self.id)
