@@ -3,5 +3,6 @@
     "SPOTIFY_CLIENT_SECRET": "CHANGEME",
     "IP": "127.0.0.1",
     "PORT": 8080,
-    "DELAY": 15
+    "DELAY": 15,
+    "SHUFFLE_SONGS": "false"
 }
