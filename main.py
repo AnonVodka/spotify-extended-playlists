@@ -202,7 +202,7 @@ def main():
                     script_added_songs_data = utils.get_diff_between_lists(user_added_songs_data, inherited_songs_to_add)[0]
 
                     if len(script_added_songs_data) == 0:
-                        print("[!] No songs to be added as the user already has them all in their playlist")
+                        print("[!] No songs to be added as the user has them all in their playlist already")
                     else:
                         print(f"[#] {len(script_added_songs_data)} songs need to be added to the playlist: " 
                             + ", ".join([songs_cache.get(x, "UNKNOWN") for x in script_added_songs_data]))
