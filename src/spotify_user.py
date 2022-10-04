@@ -1,9 +1,6 @@
-import random
 import spotipy
-
-from time import sleep
+from typing import Dict
 from src.spotify_playlist import SpotifyPlaylist
-from src.utils import utils
 from src.auth import SpotifyOAuthHandler
 
 class SpotifyUser(spotipy.Spotify):
@@ -21,7 +18,7 @@ class SpotifyUser(spotipy.Spotify):
     def get_playlist(self, playlist_id: str) -> SpotifyPlaylist:
         return SpotifyPlaylist(playlist_id, self)
 
-    def get_all_playlists(self) -> dict[str, SpotifyPlaylist]:
+    def get_all_playlists(self) -> Dict[str, SpotifyPlaylist]:
         self.playlists = {}
         _playlists = self.user_playlists(self.id)
 
