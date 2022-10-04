@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import random
 import re
-import os
+from os import makedirs, remove
+from os.path import exists
 import json
 
 from time import sleep
@@ -17,8 +18,8 @@ cfg = Config()
 
 def main():
 
-    if not os.path.exists("extended-playlists"):
-        os.makedirs("extended-playlists")
+    if not exists("extended-playlists"):
+        makedirs("extended-playlists")
 
     oauth_handler = SpotifyOAuthHandler(
         cfg.SPOTIFY_CLIENT_ID, 
@@ -68,12 +69,18 @@ def main():
             if len(urls) > 0:
                 print(f"[#] Playlist \"{playlist_name}(id: {user_playlist_id})\" extends {len(urls)} playlists")
 
-                if os.path.exists(f"extended-playlists/{user_playlist_id}.json") and len(user_playlist_songs) == 0:
-                    print("[#] Playlist is empty, removing data file")
-                    os.remove(f"extended-playlists/{user_playlist_id}.json")
+                playlist_json_file_path = f"extended-playlists/{user_playlist_id}.json"
 
-                songs_to_add = []
-                inherited_playlist_ids = []
+                if exists(playlist_json_file_path) and len(user_playlist_songs) == 0:
+                    print("[#] Playlist is empty, removing data file")
+                    remove(playlist_json_file_path)
+
+                # inherited songs we need to add
+                inherited_songs_to_add = []
+                # a dictionary containing all inherited playlist ids and playlist songs
+                inherited_playlists = {}
+                # songs that got removed from an inherited playlist
+                inherited_songs_to_remove = []
 
                 for url in urls:
                     # extract id from playlist uri (spotify:playlist:<id> / open.spotify.com/playlist/<id>)
@@ -84,108 +91,130 @@ def main():
 
                     inherited_playlist = SpotifyPlaylist(user.playlist(inherited_playlist_id), user)
 
-                    inherited_playlist_ids += inherited_playlist_id
+                    inherited_playlist_songs = inherited_playlist.get_all_songs()
 
-                    inherited_songs = inherited_playlist.get_all_songs()
+                    inherited_playlists.update({
+                        inherited_playlist_id: list(inherited_playlist_songs.keys())
+                    })
 
-                    songs_cache.update(inherited_songs)
+                    songs_cache.update(inherited_playlist_songs)
 
-                    songs_to_add += inherited_songs.keys()
+                    if exists(playlist_json_file_path):
+                        data = json.loads(open(playlist_json_file_path).read())
 
-                if cfg.SHUFFLE_SONGS:
-                    print("[#] Shuffling songs..")
-                    for i in range(5):
-                        random.shuffle(songs_to_add)
+                        inherited_playlists_data = data["inherited_playlists"]
 
-                songs_to_add, dups = utils.remove_duplicates_from_list(songs_to_add, True)  
+                        # loop through all playlists we added previously
+                        for _playlist_id, _playlist_songs in inherited_playlists_data.items():
+                            # loop through all previously added songs of that playlist
+                            for _song in _playlist_songs:
+                                # if playlist is still being inheritated from and the song isnt in that said playlist
+                                # and is also not in the songs the user has added themselves
+                                if (_playlist_id in inherited_playlists.keys() 
+                                    and _song not in inherited_playlists.get(_playlist_id)):
+                                    # that means it got removed from the playlist and we need to queue it for removal
+                                    inherited_songs_to_remove.append(_song)
 
-                dup_len = len(dups)
-                if dup_len:
-                    songs_to_add_len = len(songs_to_add)
-                    print(f"[#] Removed {dup_len} duplicates from the song list, {songs_to_add_len} out of {songs_to_add_len + dup_len} songs left to add")
+                    # loop through the songs we need to add
+                    for _song in inherited_playlist_songs.keys():
+                        # check if the song isnt already in the playlist or is already queued to be added
+                        if _song not in user_playlist_songs and _song not in inherited_songs_to_add:
+                            # and add the songs
+                            inherited_songs_to_add.append(_song)
 
-                if os.path.exists(f"extended-playlists/{user_playlist_id}.json"):
+
+                if len(inherited_songs_to_add) > 0:
+                    if cfg.SHUFFLE_SONGS:
+                        print("[#] Shuffling songs..")
+                        for i in range(5):
+                            random.shuffle(inherited_songs_to_add)
+
+                    # remove any duplicates from the songs to add, so that we dont add the same song multiple times
+                    inherited_songs_to_add, dups = utils.remove_duplicates_from_list(inherited_songs_to_add, True)  
+                    dup_len = len(dups)
+                    if dup_len > 0:
+                        songs_to_add_len = len(inherited_songs_to_add)
+                        print(f"[#] Removed {dup_len} duplicates from the song list, {songs_to_add_len} out of {songs_to_add_len + dup_len} songs left to process")
+
+                if exists(playlist_json_file_path):
                     # this playlist was already extended once
                     # so get user added songs and script added songs 
-                    # and do some comparison to see if the inherited playlist changed
-                    # or if the user added/removed songs
 
-                    print(f"[#] Playlist \"{playlist_name}(id: {user_playlist_id})\" was already extended before, comparing data to file")
+                    print(f"[#] Playlist was already extended before, comparing data to file")
 
-                    info = json.loads(open(f"extended-playlists/{user_playlist_id}.json").read())
+                    data = json.loads(open(playlist_json_file_path).read())
 
-                    user_added_songs = info["user_added_songs"]
-                    script_added_songs = info["script_added_songs"]   
+                    user_added_songs_data = data["user_added_songs"]
+                    inherited_playlists_data = data["inherited_playlists"]
 
-                    # check if the user removed any songs
-                    removed_songs = utils.get_diff_between_lists(user_playlist_songs, user_added_songs, script_added_songs)[0]
+                    # songs previously added by the script
+                    script_added_songs_data = []
 
-                    if len(removed_songs) > 0:
-                        print("[#] The user removed the following songs from their playlist: " + ", ".join([songs_cache.get(x, "UNKNOWN") for x in removed_songs]) )
-                        user_added_songs = [x for x in user_added_songs if x not in removed_songs]
+                    # loop through all playlists we added previously
+                    for _playlist_id, _playlist_songs in inherited_playlists_data.items():
+                        # add the songs to our script_added_songs list, so we know what songs we've added
+                        script_added_songs_data += list(_playlist_songs)
 
-                    # get all songs that are arent in inherited_songs nor script_added_songs
+                        if cfg.AUTO_REMOVED_INHERITED_SONGS:
+                            # if the playlist id of our previous inherited playlist isnt in our to inherit playlists
+                            if _playlist_id not in inherited_playlists.keys():
+                                # loop through the songs from that playlist
+                                for _song in _playlist_songs:
+                                    # check if the songs arent in any other playlist or the user didnt add the song manually
+                                    if _song not in inherited_songs_to_add and _song not in user_added_songs_data:
+                                        # and add them to the songs we need to remove
+                                        inherited_songs_to_remove.append(_song)
+
+                    # get all songs from user_added_songs and script_added_songs that arent in user_playlist_songs
+                    # those are the songs that the user removed
+                    user_removed_songs = utils.get_diff_between_lists(user_playlist_songs, user_added_songs_data, script_added_songs_data)[0]
+                    if len(user_removed_songs) > 0:
+                        print(f"[#] The user removed {len(user_removed_songs)} songs from their playlist: " + ", ".join([songs_cache.get(x, "UNKNOWN") for x in user_removed_songs]) )
+                        user_added_songs_data = [x for x in user_added_songs_data if x not in user_removed_songs]
+
+                    # get all songs that are arent in inherited_songs_to_add nor script_added_songs_data
                     # those are the songs the user has added manually
                     # and update user_added_songs
-                    diff = utils.get_diff_between_lists(user_playlist_songs, songs_to_add, script_added_songs)[1]
-                    new_user_added_songs = utils.get_diff_between_lists(user_added_songs, diff)[0]
-
+                    diff = utils.get_diff_between_lists(user_playlist_songs, inherited_songs_to_add, script_added_songs_data)[1]
+                    new_user_added_songs = utils.get_diff_between_lists(user_added_songs_data, diff)[0]
                     if len(new_user_added_songs) > 0:
-                        print("[!] The user added the following songs to their playlist: " + ", ".join([songs_cache.get(x, "UNKNOWN") for x in new_user_added_songs]))
-                        user_added_songs += new_user_added_songs
+                        print(f"[#] The user added {len(new_user_added_songs)} songs to their playlist: " 
+                        + ", ".join([songs_cache.get(x, "UNKNOWN") for x in new_user_added_songs]))
+                        user_added_songs_data += new_user_added_songs
 
-                    # check if there are any differences between already inherited songs and the to inherite songs
-                    # make sure that we are skipping user added songs
-                    (not_in_a, not_in_b) = utils.get_diff_between_lists(songs_to_add, script_added_songs, user_added_songs)
-
-                    if len(not_in_a) == 0 and len(not_in_b) == 0:
+                    if len(inherited_songs_to_remove) == 0 and len(inherited_songs_to_add) == 0:
                         print("[#] No songs to be added or removed")
 
                     else:
-                        if len(not_in_a) > 0:
-                            # songs got removed from the inherited playlist
-                            # remove excessive songs from user playlist
-                            print("[-] The following songs need to be removed: " + ', '.join([songs_cache.get(x, "UNKNOWN") for x in not_in_a]))   
+                        if len(inherited_songs_to_remove) > 0:
+                            print(f"[#] {len(inherited_songs_to_remove)} songs need to be removed from the playlist: " 
+                                    + ", ".join([songs_cache.get(x, "UNKNOWN") for x in inherited_songs_to_remove]))
+                            playlist.remove_songs(inherited_songs_to_remove)
 
-                            script_added_songs = [x for x in script_added_songs if x not in not_in_a]
-
-                            playlist.remove_songs(not_in_a)
-
-                        if len(not_in_b) > 0:
-                            # songs got added to the inherited playlist
-                            # add missing songs to the playlist
-                            # get the difference between the existing songs and the songs we need to add
-                            # so that we dont add songs that are already in the playlist coz the user added them lol
-                            new_not_in_b = utils.get_diff_between_lists(user_playlist_songs, not_in_b)[0]
-
-                            if len(new_not_in_b) == 0:
-                                print("[#] No songs to be added after removing already existing songs")
-                                script_added_songs += not_in_b
-                            else:
-                                print("[+] The following songs need to be added: " + ', '.join([songs_cache.get(x, "UNKNOWN") for x in new_not_in_b]))  
-
-                                playlist.add_songs(new_not_in_b)
-
-                            script_added_songs += new_not_in_b  
-
+                        if len(inherited_songs_to_add) > 0:
+                            print(f"[#] {len(inherited_songs_to_add)} songs need to be added to the playlist: " 
+                                    + ", ".join([songs_cache.get(x, "UNKNOWN") for x in inherited_songs_to_add]))
+                            playlist.add_songs(inherited_songs_to_add)
                 else:
-                    user_added_songs = user_playlist_songs
-                    script_added_songs = utils.get_diff_between_lists(user_added_songs, songs_to_add)[0]
+                    user_added_songs_data = user_playlist_songs
+                    # get all songs from songs_to_add that arent in user_added_songs_data
+                    # those are the songs the script added
+                    script_added_songs_data = utils.get_diff_between_lists(user_added_songs_data, inherited_songs_to_add)[0]
 
-                    if len(script_added_songs) == 0:
+                    if len(script_added_songs_data) == 0:
                         print("[!] No songs to be added as the user already has them all in their playlist")
                     else:
-                        print("[#] The following songs need to be added: " + ", ".join([songs_cache.get(x, "UNKNOWN") for x in script_added_songs]))
-                        playlist.add_songs(script_added_songs)
+                        print(f"[#] {len(script_added_songs_data)} songs need to be added to the playlist: " 
+                            + ", ".join([songs_cache.get(x, "UNKNOWN") for x in script_added_songs_data]))
+                        playlist.add_songs(script_added_songs_data)
                     
-                open(f"extended-playlists/{user_playlist_id}.json", "w").write(json.dumps({
-                    "inherited_playlists": inherited_playlist_ids,
+                open(playlist_json_file_path, "w").write(json.dumps({
                     "name": playlist_name,
-                    "script_added_songs": script_added_songs,
-                    "user_added_songs": user_added_songs
+                    "total_playlists_inherited": len(inherited_playlists),
+                    "total_songs_inherited": len(script_added_songs_data),
+                    "inherited_playlists": inherited_playlists,
+                    "user_added_songs": user_added_songs_data
                 }))
-
-
 
         print(f"[#] Fetching again in {cfg.DELAY} minutes ({cfg.DELAY * 60} seconds)")
         sleep(cfg.DELAY * 60)

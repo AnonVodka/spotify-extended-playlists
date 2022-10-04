@@ -22,7 +22,7 @@ class SpotifyPlaylist():
 
         songs = {}
 
-        tracks = self.tracks
+        tracks = self.user.playlist_items(self.id, limit=100)
         total_songs = tracks["total"]
         def _add_tracks(_tracks):
             for x in _tracks["items"]:

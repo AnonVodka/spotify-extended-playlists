@@ -38,6 +38,7 @@ class Config():
             self.PORT = cfg.get("PORT", 8080)
             self.DELAY = cfg.get("DELAY", 15)
             self.SHUFFLE_SONGS = cfg.get("SHUFFLE_SONGS", False)
+            self.AUTO_REMOVED_INHERITED_SONGS = cfg.get("AUTO_REMOVED_INHERITED_SONGS", False)
 
             with open("./config.json", "w") as f:
                 f.write(json.dumps(self.__dict__))
@@ -52,6 +53,7 @@ class Config():
         cfg["PORT"] = input("\nPlease enter the port that the auth server should run on (for example 8080):\n")
         cfg["DELAY"] = int(input("\nPlease enter the desired refresh delay in minutes:\n"))
         cfg["SHUFFLE_SONGS"] = True if "y" == input("\nDo you want the script to shuffle the songs its going to add(y/n):\n") else False
+        cfg["AUTO_REMOVED_INHERITED_SONGS"] = False if "y" == input("\nDo you want the script to keep songs from playlists that arent extended anymore?(y/n):\n") else True
 
         try:
             with open("./config.json", "w") as f:
