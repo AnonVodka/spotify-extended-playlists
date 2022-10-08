@@ -30,7 +30,7 @@ class Logging:
         with open(f"logs/{self.suffix}-{self.time_string}.log", "a") as logfile:
             logfile.write(f"[{time.strftime('%d-%m-%Y %H:%M:%S')}]" f" {msg.encode('ascii', 'replace').decode()}\n")
     
-    def exception(self, type : type[BaseException], msg: str, tb: traceback):
+    def exception(self, type : BaseException, msg: str, tb: traceback):
         self.suffix = "exceptions"
 
         trace_back = traceback.extract_tb(tb)
