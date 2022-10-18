@@ -1,5 +1,5 @@
 ## Requirements
-- Python3.6 or higher
+- Python 3.10 or higher
 - [A spotify developer application](#how-to-create-a-spotify-developer-application)
 - [Client ID and Secret of your application](#how-to-get-the-client-id-and-client-secret-from-your-application)
 
