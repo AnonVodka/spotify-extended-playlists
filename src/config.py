@@ -39,6 +39,7 @@ class Config():
             self.DELAY = cfg.get("DELAY", 15)
             self.SHUFFLE_SONGS = cfg.get("SHUFFLE_SONGS", False)
             self.AUTO_REMOVED_INHERITED_SONGS = cfg.get("AUTO_REMOVED_INHERITED_SONGS", False)
+            self.DEBUG = cfg.get("DEBUG", False)
 
             with open("./config.json", "w") as f:
                 f.write(json.dumps(self.__dict__))

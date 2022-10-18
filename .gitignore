@@ -154,5 +154,7 @@ cython_debug/
 
 config.json
 .auth-cache
-data/
-extended-playlists/
+
+cache/*
+Pipfile
+Pipfile.lock

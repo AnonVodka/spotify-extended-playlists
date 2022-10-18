@@ -1,6 +1,8 @@
 import spotipy
+import json
+import src
 
-class SpotifyPlaylist():
+class SpotifyPlaylist:
     def __init__(self, playlist, user : spotipy.Spotify = None) -> None:
 
         if type(playlist) == str:
@@ -12,6 +14,9 @@ class SpotifyPlaylist():
 
         self.user = user
 
+    def info(self) -> str:
+        return f"{self.name}(id: {self.id})"
+
     def _get_song_name(self, track):
         return f'{track["name"]} - {", ".join([x["name"] for x in track["artists"]])}'
 
@@ -20,7 +25,7 @@ class SpotifyPlaylist():
         if self.user == None:
             raise Exception("This function can't be used without giving a user object in the constructor!")
 
-        songs = {}
+        self.songs = {}
 
         # 11 Traceback (most recent call last):
         # 12   File "/home/anon/spotify-extended-playlists/main.py", line 224, in <module>
@@ -35,24 +40,21 @@ class SpotifyPlaylist():
 
         tracks = self.user.playlist_items(self.id, limit=100)
         total_songs = tracks["total"]
-        def _add_tracks(_tracks):
-            for x in _tracks["items"]:
-                track = x["track"]
-                songs.update({
-                    track["id"]: self._get_song_name(track)
-                })
 
         if total_songs == 0:
-            return songs
+            return self.songs
 
-        if total_songs > 100:
-            for i in range(0, total_songs, 100):
-                tracks = self.user.playlist_items(self.id, limit=100, offset=i)
-                _add_tracks(tracks)
-        else:
-            _add_tracks(tracks)
+        while tracks:
+            for track in tracks["items"]:
+                self.songs.update({
+                    track["track"]["id"]: self._get_song_name(track["track"])
+                })
+            if tracks['next']:
+                tracks = self.user.next(tracks)
+            else:
+                tracks = None
 
-        return songs
+        return self.songs
 
     def add_songs(self, songs: list) -> None:
 
@@ -81,3 +83,17 @@ class SpotifyPlaylist():
                 self.user.playlist_remove_all_occurrences_of_items(self.id, songs[i:100+i])
         else:
             self.user.playlist_remove_all_occurrences_of_items(self.id, songs)
+
+    def toJson(self) -> str:
+        ret = {}
+        for k, v in self.__dict__.items():
+            if type(v) is not src.spotify_user.SpotifyUser:
+                ret.update({
+                    k: v
+                })
+        return json.dumps(ret)
+
+    @staticmethod
+    def fromJson(json_str: str):
+        obj = json.loads(json_str)
+        return SpotifyPlaylist(obj)

@@ -1,12 +1,11 @@
 import os
 import time
 import traceback
-from typing import Any, Tuple
-
 class Logging:
-    def __init__(self, suffix: str = "logs"):
+    def __init__(self, cfg, suffix: str = "logs"):
         self.cwd = os.getcwd()    
         self.suffix = suffix
+        self.cfg = cfg
 
         self.time_string = time.strftime("%d-%m-%Y")
 
@@ -25,10 +24,10 @@ class Logging:
             self.check_time_date()
 
         if console:
-            print(f"[{time.strftime('%H:%M:%S')}]" f" {msg.encode('ascii', 'replace').decode()}")
+            print(f"[{time.strftime('%H:%M:%S')}] {msg.encode('ascii', 'replace').decode()}")
 
         with open(f"logs/{self.suffix}-{self.time_string}.log", "a") as logfile:
-            logfile.write(f"[{time.strftime('%d-%m-%Y %H:%M:%S')}]" f" {msg.encode('ascii', 'replace').decode()}\n")
+            logfile.write(f"[{time.strftime('%d-%m-%Y %H:%M:%S')}] {msg.encode('ascii', 'replace').decode()}\n")
     
     def exception(self, type : BaseException, msg: str, tb: traceback):
         self.suffix = "exceptions"
@@ -38,9 +37,9 @@ class Logging:
         self.log("An exception occured: ")
         self.log(f"Exception type : {type.__name__}", True, False)
         self.log(f"Exception message : {msg}", True, False)
-        self.log(f"Stack trace :", False, False)
+        self.log(f"Stack trace :", self.cfg.DEBUG, False)
         for trace in trace_back:
-            self.log(f"\t - File : {trace[0]} , Line : {trace[1]}, Function : {trace[2]}, Message : {trace[3]}", False, False)
+            self.log(f"\t - File : {trace[0]} , Line : {trace[1]}, Function : {trace[2]}, Message : {trace[3]}", self.cfg.DEBUG, False)
 
     def clear_logs(self):
         for f in os.listdir(f"{self.cwd}/logs"):

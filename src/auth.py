@@ -8,14 +8,14 @@ class SpotifyOAuthHandler(SpotifyOAuth):
         self.port = port
 
         super().__init__( 
-            client_id, 
+            client_id,
             client_secret,
             f"http://{ip}:{port}",
             scope=scope,
             cache_path=cache_path 
         )
 
-        token = self.get_cached_token()
+        token = self.get_token()
         if token == None:            
             self.start_webserver()
 
@@ -42,13 +42,9 @@ class SpotifyOAuthHandler(SpotifyOAuth):
             return htmlForLoginButton()
 
         def htmlForLoginButton():
-            auth_url = getSPOauthURI()
+            auth_url = self.get_authorize_url()
             htmlLoginButton = "<center><a href='" + auth_url + "'>Login to Spotify</a></center>"
             return htmlLoginButton
-
-        def getSPOauthURI():
-            auth_url = self.get_authorize_url()
-            return auth_url
 
         print(f"[#] Running web server on {self.ip}:{self.port}..")
         print(f"[#] Please visit the following link to proceed with the script..")
