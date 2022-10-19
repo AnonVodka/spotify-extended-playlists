@@ -37,9 +37,6 @@ sys.excepthook = exception_handler
 
 def main():
 
-    if not exists("extended-playlists"):
-        mkdir("extended-playlists")
-
     oauth_handler = SpotifyOAuthHandler(
         cfg.SPOTIFY_CLIENT_ID, 
         cfg.SPOTIFY_CLIENT_SECRET, 
