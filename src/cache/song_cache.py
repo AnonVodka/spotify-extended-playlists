@@ -1,6 +1,5 @@
 import json
-from re import I
-from typing import Dict, Tuple
+from typing import Dict
 from os import makedirs
 from os.path import exists
 
@@ -21,7 +20,7 @@ class SongsCache:
 
     def update_cache(self):
         with open(f"{self.cache_path}/songs.json", "w") as f:
-            f.write(json.dumps(self.cache))
+            f.write(json.dumps(self.cache, indent=4))
 
     def add_song(self, id: str, name: str, updateFile: bool = True):
         """Adds a song to the cache file"""

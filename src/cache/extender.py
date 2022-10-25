@@ -44,7 +44,7 @@ class Extender:
                 "total_songs_inherited": len(script_added_songs),
                 "inherited_playlists": inherited_playlists,
                 "user_added_songs": user_added_songs
-            }))
+            }, indent=4))
 
         return True
 

@@ -91,7 +91,7 @@ class SpotifyPlaylist:
                 ret.update({
                     k: v
                 })
-        return json.dumps(ret)
+        return json.dumps(ret, indent=4)
 
     @staticmethod
     def fromJson(json_str: str):

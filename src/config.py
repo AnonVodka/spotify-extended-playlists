@@ -2,7 +2,6 @@ from os import path, remove
 import shutil
 import json
 
-
 class Config():
     def __init__(self):
 
@@ -15,7 +14,6 @@ class Config():
     def check_config_values(self) -> None:
         with open("./config.json", "r") as f:
             cfg = json.loads(f.read())
-            f.close()
             vals = (cfg.get("SPOTIFY_CLIENT_ID"), cfg.get("SPOTIFY_CLIENT_SECRET"), cfg.get("IP"), cfg.get("PORT"))
             if None in vals or "CHANGEME" in vals:
                 print("Some config values where invalid, regenerating config")
@@ -31,7 +29,6 @@ class Config():
         """Reads the required credentials from the config file"""
         with open("./config.json", "r") as f:
             cfg = json.loads(f.read())
-            f.close()
             self.SPOTIFY_CLIENT_ID = cfg.get("SPOTIFY_CLIENT_ID")
             self.SPOTIFY_CLIENT_SECRET = cfg.get("SPOTIFY_CLIENT_SECRET")
             self.IP = cfg.get("IP", "127.0.0.1")
@@ -42,8 +39,7 @@ class Config():
             self.DEBUG = cfg.get("DEBUG", False)
 
             with open("./config.json", "w") as f:
-                f.write(json.dumps(self.__dict__))
-                f.close()
+                f.write(json.dumps(self.__dict__, indent=4))
 
     def write_config_values_from_user_input(self) -> None:
         cfg = {}
@@ -58,8 +54,7 @@ class Config():
 
         try:
             with open("./config.json", "w") as f:
-                f.write(json.dumps(cfg))
-                f.close()
+                f.write(json.dumps(cfg, indent=4))
 
             s = "Successfully set config variables"
             print("-"*len(s))
