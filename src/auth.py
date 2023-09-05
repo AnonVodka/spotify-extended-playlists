@@ -19,8 +19,9 @@ class SpotifyOAuthHandler(SpotifyOAuth):
         if token == None:            
             self.start_webserver()
 
-    def get_token(self) -> str:
-        return self.validate_token(self.cache_handler.get_cached_token()).get("access_token", None)
+    def get_token(self) -> str:        
+        validation = self.validate_token(self.cache_handler.get_cached_token())
+        return None if validation is None else validation.get("access_token", None)
 
     def start_webserver(self) -> None: 
 

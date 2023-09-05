@@ -65,6 +65,7 @@ def main():
                 if len(f"{actual_desc} {time_desc}") <= 300:
                     user.user_playlist_change_details(user.id, playlist.id, description=f"{actual_desc} {time_desc}")
         else:
+            print("No description")
             user.user_playlist_change_details(user.id, playlist.id, description=time_desc)
         
         if len(matches) > 1 and i != len(matches)-1:

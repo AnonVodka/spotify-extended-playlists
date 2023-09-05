@@ -2,6 +2,8 @@ import spotipy
 import json
 import src
 
+import os
+
 class SpotifyPlaylist:
     def __init__(self, playlist, user : spotipy.Spotify = None) -> None:
 
@@ -18,6 +20,9 @@ class SpotifyPlaylist:
         return f"{self.name}(id: {self.id})"
 
     def _get_song_name(self, track):
+        track_type = track["type"]
+        if track_type == "episode":
+            return track["name"]
         return f'{track["name"]} - {", ".join([x["name"] for x in track["artists"]])}'
 
     def get_all_songs(self) -> dict:
