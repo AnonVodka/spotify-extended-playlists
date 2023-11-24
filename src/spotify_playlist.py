@@ -32,17 +32,6 @@ class SpotifyPlaylist:
 
         self.songs = {}
 
-        # 11 Traceback (most recent call last):
-        # 12   File "/home/anon/spotify-extended-playlists/main.py", line 224, in <module>
-        # 13     main()
-        # 14   File "/home/anon/spotify-extended-playlists/main.py", line 58, in main
-        # 15     playlist_songs = playlist.get_all_songs()
-        # 16   File "/home/anon/spotify-extended-playlists/src/spotify_playlist.py", line 40, in get_all_songs
-        # 17     _add_tracks(tracks)
-        # 18   File "/home/anon/spotify-extended-playlists/src/spotify_playlist.py", line 31, in _add_tracks
-        # 19     track["id"]: self._get_song_name(track)
-        # 20 TypeError: 'NoneType' object is not subscriptable
-
         tracks = self.user.playlist_items(self.id, limit=100)
         total_songs = tracks["total"]
 
@@ -51,10 +40,15 @@ class SpotifyPlaylist:
 
         while tracks:
             for track in tracks["items"]:
+
+                if track["track"] == "None" or track["track"] == None:
+                    continue
+
                 self.songs.update({
                     track["track"]["id"]: self._get_song_name(track["track"])
                 })
-            if tracks['next']:
+
+            if tracks["next"]:
                 tracks = self.user.next(tracks)
             else:
                 tracks = None
